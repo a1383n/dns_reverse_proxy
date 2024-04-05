@@ -1,9 +1,0 @@
-#ifndef DNS_REVERSE_PROXY_DNS_H
-#define DNS_REVERSE_PROXY_DNS_H
-
-class DNS {
-
-};
-
-
-#endif //DNS_REVERSE_PROXY_DNS_H
