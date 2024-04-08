@@ -4,17 +4,9 @@
 #define _SOCK_DEFAULT_BACKLOG 64
 
 #include <netinet/in.h>
+#include <arpa/inet.h> // inet_ntoa(),
 #include <vector>
 #include <functional>
-
-struct sock_conn_t {
-    int clientFd;
-    sockaddr_in clientAddr;
-    socklen_t clientAddrLen;
-};
-
-using NewConnectionCallback = std::function<void(struct sock_conn_t *)>;
-
 
 class Socket {
 public:
@@ -24,20 +16,13 @@ public:
 
     void setOptions(int level, int optname);
 
-    void initialize(int backlog = _SOCK_DEFAULT_BACKLOG);
+    void bind();
 
-    void terminate();
 
-    void start();
-
-    void setNewConnectionCallback(NewConnectionCallback callback);
-
-private:
+protected:
     int socketFd, option;
     struct sockaddr_in s_addr {};
     socklen_t addr_len;
-    NewConnectionCallback newConnectionCallback;
-    std::vector<sock_conn_t> connections = {};
 
     static void error(const char *s, bool thw = true);
 
@@ -46,5 +31,12 @@ private:
 #endif
 };
 
+class SocketClient {
+public:
+    SocketClient(const sockaddr_in &addr, socklen_t addrLen);
+
+    sockaddr_in addr;
+    socklen_t addrLen;
+};
 
 #endif //DNS_REVERSE_PROXY_SOCKET_HPP

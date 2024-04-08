@@ -2,7 +2,6 @@
 
 #include "inet/tcp.hpp"
 
-#include <arpa/inet.h>
 #include <csignal>
 #include <thread>
 
@@ -10,7 +9,6 @@ static TCP *tcp;
 
 void terminate(int s) {
     printf("Terminating with signal %d...\n", s);
-    tcp->terminate();
     delete tcp;
     exit(0);
 }
@@ -19,21 +17,17 @@ int main() {
     signal(SIGTERM, terminate);
     signal(SIGINT, terminate);
 
-    try {
-        tcp = new TCP(INADDR_ANY, 3000);
-        tcp->initialize();
-    } catch (std::runtime_error &e) {
-        perror(e.what());
-        delete tcp;
-        return 1;
-    }
+    tcp = new TCP(INADDR_ANY, 3000);
+    tcp->bind();
 
-    tcp->setNewConnectionCallback([](struct sock_conn_t *client) {
-        printf("New client connected: %s:%d\n", inet_ntoa(client->clientAddr.sin_addr),
-               (int) ntohs(client->clientAddr.sin_port));
-    });
+    auto a = [](TCPClient *client) {
+        printf("New client connected: %s:%d\n", inet_ntoa(client->addr.sin_addr),
+               (int) ntohs(client->addr.sin_port));
+    };
 
-    std::thread t(&TCP::start, tcp);
+    tcp->setNewConnectionCallback((void *(*)(TCPClient *)) &a);
+
+    std::thread t(&TCP::listen, tcp, _SOCK_DEFAULT_BACKLOG);
     t.detach();
 
     getchar();
