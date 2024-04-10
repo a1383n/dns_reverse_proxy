@@ -1,25 +1,26 @@
 #include <iostream>
 
 #include "inet/tcp.hpp"
+#include "inet/udp.hpp"
 
 #include <csignal>
 #include <thread>
 #include <string.h>
 
 static TCP *tcp;
+static UDP *udp;
+std::thread tcpTread;
+std::thread udpThread;
 
 void terminate(int s) {
     printf("Terminating with signal %d...\n", s);
     delete tcp;
-    exit(0);
+    delete udp;
+    exit(EXIT_SUCCESS);
 }
 
-int main() {
-    signal(SIGABRT, terminate);
-    signal(SIGTERM, terminate);
-    signal(SIGINT, terminate);
-
-    tcp = new TCP(INADDR_ANY, 9000);
+void initializeTcpSocket(int port) {
+    tcp = new TCP(INADDR_ANY, port);
     tcp->bind();
 
     tcp->setNewConnectionCallback([](TCPClient *client) {
@@ -31,6 +32,20 @@ int main() {
         printf("Client %s:%d disconnected\n", inet_ntoa(client->addr.sin_addr), ntohs(client->addr.sin_port));
         fflush(stdout);
     });
+}
+
+void initializeUdpSocket(int port) {
+    udp = new UDP(INADDR_ANY, port);
+    udp->bind();
+}
+
+int main() {
+    signal(SIGABRT, terminate);
+    signal(SIGTERM, terminate);
+    signal(SIGINT, terminate);
+
+    initializeTcpSocket(3000);
+    initializeUdpSocket(3000);
 
     tcp->setOnDataCallback([](TCPClient *client, void *buff, size_t len) {
         const char *s = "HTTP/1.1 200 OK\n"
@@ -43,14 +58,20 @@ int main() {
                         "</body>\n"
                         "</html>\n";
 
-        send(client->fd, s, strlen(s), 0);
+        client->send((void *) s, strlen(s));
         shutdown(client->fd, SHUT_RDWR);
+    });
+    udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
+        client->send(buff, len);
     });
 
     // Listen on separate thread
-    std::thread t(&TCP::listen, tcp, _SOCK_DEFAULT_BACKLOG);
-    t.detach();
+    tcpTread = std::thread(&TCP::listen, tcp, _SOCK_DEFAULT_BACKLOG);
+    udpThread = std::thread(&UDP::receive, udp);
+
+    tcpTread.detach();
+    udpThread.detach();
 
     getchar();
-    terminate(0);
+    terminate(EXIT_SUCCESS);
 }

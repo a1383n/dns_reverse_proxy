@@ -34,6 +34,7 @@ void Socket::bind() {
 
 void Socket::error(const char *s, bool thw) {
     if (thw) {
+        perror(s);
         throw std::runtime_error(s);
     } else {
         perror(s);
@@ -46,10 +47,14 @@ void Socket::setOptions(int level, int optname) {
     }
 }
 
+void Socket::setReadBuffer(size_t s) {
+    this->buffer_len = s;
+}
+
 #ifdef __DEBUG_MODE
 static void debug(const char *s) {
     //TODO: Print some debug information
 }
 #endif
 
-SocketClient::SocketClient(const sockaddr_in &addr, socklen_t addrLen) : addr(addr), addrLen(addrLen) {}
+SocketClient::SocketClient(const sockaddr_in addr, socklen_t addrLen, int fd) : addr(addr), addrLen(addrLen), fd(fd) {}

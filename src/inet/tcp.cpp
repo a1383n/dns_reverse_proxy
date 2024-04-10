@@ -112,8 +112,8 @@ TCP::~TCP() {
     close(epollFd);
 }
 
-void TCP::setReadBuffer(size_t s) {
-    buffer_len = s;
-}
+TCPClient::TCPClient(const sockaddr_in &addr, socklen_t addrLen, int fd) : SocketClient(addr, addrLen, fd) {}
 
-TCPClient::TCPClient(const sockaddr_in &addr, socklen_t addrLen, int fd) : SocketClient(addr, addrLen), fd(fd) {}
+ssize_t TCPClient::send(void *buff, ssize_t len) {
+    return ::send(fd, buff, len, MSG_CONFIRM);
+}
