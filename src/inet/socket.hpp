@@ -2,6 +2,7 @@
 #define DNS_REVERSE_PROXY_SOCKET_HPP
 
 #define _SOCK_DEFAULT_BACKLOG 64
+#define SOCK_DEFAULT_READ_BUFF 4096
 
 #include <netinet/in.h>
 #include <arpa/inet.h> // inet_ntoa(),
