@@ -11,6 +11,8 @@ public:
     int fd;
 };
 
+using NewConnectionCallback = std::function<void(TCPClient *)>;
+
 class TCP : public Socket {
 public:
     TCP(int addr, int port);
@@ -19,11 +21,11 @@ public:
 
     void listen(int backlog = _SOCK_DEFAULT_BACKLOG);
 
-    void setNewConnectionCallback(void *(callback)(TCPClient *));
+    void setNewConnectionCallback(NewConnectionCallback callback);
 
 protected:
-    std::vector<TCPClient> connections = {};
-    void *newConnectionCallback;
+    std::vector<TCPClient *> connections = {};
+    NewConnectionCallback newConnectionCallback;
 };
 
 #endif

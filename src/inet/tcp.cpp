@@ -22,19 +22,21 @@ void TCP::listen(int backlog) {
 
         TCPClient client = TCPClient(clientAddr, clientAddrLen, clientFd);
 
-        connections.push_back(client);
-        ((void (*)(TCPClient)) newConnectionCallback)(client);
+        connections.push_back(&client);
+
+        if (newConnectionCallback) {
+            newConnectionCallback(&client);
+        }
     }
 }
 
-
-void TCP::setNewConnectionCallback(void *(*callback)(TCPClient *)) {
-    newConnectionCallback = (void *) callback;
+void TCP::setNewConnectionCallback(NewConnectionCallback callback) {
+    newConnectionCallback = std::move(callback);
 }
 
 TCP::~TCP() {
     for (auto &connection: connections) {
-        close(connection.fd);
+        close(connection->fd);
     }
 }
 
