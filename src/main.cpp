@@ -2,6 +2,7 @@
 
 #include "inet/tcp.hpp"
 #include "inet/udp.hpp"
+#include "inet/dns.hpp"
 
 #include <csignal>
 #include <thread>
@@ -62,7 +63,12 @@ int main() {
         shutdown(client->fd, SHUT_RDWR);
     });
     udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
-        client->send(buff, len);
+        struct dns_packet_t dnsPacket = DNS::parseQueryPacket((uint8_t *) buff, len);
+
+        printf("%s\n", dnsPacket.questions[0].qname.c_str());
+        fflush(stdout);
+
+//        client->send(buff, len);
     });
 
     // Listen on separate thread
