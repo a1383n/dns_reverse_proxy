@@ -22,6 +22,8 @@ class DNSPacket {
 public:
     DNSPacket(uint8_t *buff, unsigned long len);
 
+    static ssize_t generateResponse(uint8_t *buff, const DNSPacket &dnsPacket, const std::string &ip);
+
     struct dns_header_msg_t header;
     struct std::vector<dns_question_msg_t> questions;
 };

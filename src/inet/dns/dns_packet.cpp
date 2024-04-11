@@ -1,6 +1,8 @@
 #include "dns_packet.hpp"
 
 #include <stdexcept>
+#include <cstring>
+#include <netinet/in.h>
 
 #define U16S(_PAYLOAD, _INDEX) (uint8_t)((((uint8_t*)(_PAYLOAD))[_INDEX] << 8) + ((uint8_t*)(_PAYLOAD))[_INDEX+1])
 
@@ -58,4 +60,43 @@ DNSPacket::DNSPacket(uint8_t *buff, unsigned long len) {
 
     this->header = headerMsg;
     this->questions = questions;
+}
+
+ssize_t DNSPacket::generateResponse(uint8_t *buff, const DNSPacket &dnsPacket, const std::string &ip) {
+    ssize_t s = 0;
+
+    // Copy the ID from the DNS query packet
+    *((uint16_t *) buff) = htons(dnsPacket.header.id);
+    s += 2;
+
+    // Set response flags (e.g., response, no error)
+    *((uint16_t *) (buff + s)) = htons(0x8180); // Sample flags (response, no error)
+    s += 2;
+
+    // Copy QDCOUNT from the DNS query packet
+    *((uint16_t *) (buff + s)) = htons(dnsPacket.header.qdcount);
+    s += 2;
+
+    // Set ANCOUNT to 1 (one answer)
+    *((uint16_t *) (buff + s)) = htons(1);
+    s += 2;
+
+    // Skip NSCOUNT and ARCOUNT (set to 0 for now)
+    s += 4;
+
+    // Copy the question section from the DNS query packet to the response
+    std::memcpy(buff + s, dnsPacket.questions[0].qname.c_str(), dnsPacket.questions[0].qname.length());
+    s += dnsPacket.questions[0].qname.length();
+    *((uint16_t *) (buff + s)) = htons(1); // QTYPE (A record)
+    s += 2;
+    *((uint16_t *) (buff + s)) = htons(1); // QCLASS (IN)
+    s += 2;
+
+    // Add the answer section with the provided IP address
+    std::string answer = "\xC0\x0C\x00\x01\x00\x01\x00\x00\x00\x3C\x00\x04";
+    answer += ip; // Assuming ip is in dot-decimal notation (e.g., "192.168.1.1")
+    std::memcpy(buff + s, answer.c_str(), answer.length());
+    s += answer.length();
+
+    return s;
 }

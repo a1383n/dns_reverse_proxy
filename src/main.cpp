@@ -3,7 +3,8 @@
 #include "inet/socket/tcp.hpp"
 #include "inet/socket/udp.hpp"
 #include "inet/dns/dns.hpp"
-#include "inet/dns/dns_packet.hpp"
+
+#include "config/config.h"
 
 #include <csignal>
 #include <thread>
@@ -49,6 +50,8 @@ int main() {
     initializeTcpSocket(3000);
     initializeUdpSocket(3000);
 
+    Config::setHttpResolverUrl("http://127.0.0.1:8000/api/resolve?qname=");
+
     tcp->setOnDataCallback([](TCPClient *client, void *buff, size_t len) {
         const char *s = "HTTP/1.1 200 OK\n"
                         "Content-Length: 53\n"
@@ -65,11 +68,14 @@ int main() {
     });
     udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
         DNSPacket dnsPacket = DNSPacket((uint8_t *) buff, len);
+        HttpDNSResolver dnsResolver = HttpDNSResolver();
 
-        printf("%s\n", dnsPacket.questions[0].qname.c_str());
-        fflush(stdout);
+        std::string ip;
+        dnsResolver.resolve(dnsPacket.questions[0].qname, &ip);
 
-//        client->send(buff, len);
+        uint8_t r[4096];
+        size_t l = DNSPacket::generateResponse(r, dnsPacket, ip);
+        printf("%zu\n", client->send(r, l));
     });
 
     // Listen on separate thread
