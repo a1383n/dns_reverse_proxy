@@ -1,9 +1,7 @@
-#ifndef DNS_REVERSE_PROXY_DNS_HPP
-#define DNS_REVERSE_PROXY_DNS_HPP
+#ifndef DNS_REVERSE_PROXY_DNS_PACKET_H
+#define DNS_REVERSE_PROXY_DNS_PACKET_H
 
-#include <cstdint>
-#include <vector>
-#include <string>
+#include "dns.hpp"
 
 struct dns_question_msg_t {
     std::string qname;
@@ -20,15 +18,12 @@ struct dns_header_msg_t {
     uint16_t arcount;
 };
 
-struct dns_packet_t {
+class DNSPacket {
+public:
+    DNSPacket(uint8_t *buff, unsigned long len);
+
     struct dns_header_msg_t header;
     struct std::vector<dns_question_msg_t> questions;
 };
 
-class DNS {
-public:
-    static struct dns_packet_t parseQueryPacket(uint8_t *buff, unsigned long len);
-};
-
-
-#endif //DNS_REVERSE_PROXY_DNS_HPP
+#endif //DNS_REVERSE_PROXY_DNS_PACKET_H

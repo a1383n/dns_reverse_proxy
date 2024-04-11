@@ -1,10 +1,10 @@
-#include "dns.hpp"
+#include "dns_packet.hpp"
 
 #include <stdexcept>
 
 #define U16S(_PAYLOAD, _INDEX) (uint8_t)((((uint8_t*)(_PAYLOAD))[_INDEX] << 8) + ((uint8_t*)(_PAYLOAD))[_INDEX+1])
 
-struct dns_packet_t DNS::parseQueryPacket(uint8_t *buff, unsigned long len) {
+DNSPacket::DNSPacket(uint8_t *buff, unsigned long len) {
     if (len < sizeof(dns_header_msg_t)) {
         throw std::runtime_error("Invalid packet size");
     }
@@ -56,8 +56,6 @@ struct dns_packet_t DNS::parseQueryPacket(uint8_t *buff, unsigned long len) {
         questions.push_back(questionMsg);
     }
 
-    return {
-            .header = headerMsg,
-            .questions = questions
-    };
+    this->header = headerMsg;
+    this->questions = questions;
 }

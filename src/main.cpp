@@ -1,8 +1,9 @@
 #include <iostream>
 
-#include "inet/tcp.hpp"
-#include "inet/udp.hpp"
-#include "inet/dns.hpp"
+#include "inet/socket/tcp.hpp"
+#include "inet/socket/udp.hpp"
+#include "inet/dns/dns.hpp"
+#include "inet/dns/dns_packet.hpp"
 
 #include <csignal>
 #include <thread>
@@ -63,7 +64,7 @@ int main() {
         shutdown(client->fd, SHUT_RDWR);
     });
     udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
-        struct dns_packet_t dnsPacket = DNS::parseQueryPacket((uint8_t *) buff, len);
+        DNSPacket dnsPacket = DNSPacket((uint8_t *) buff, len);
 
         printf("%s\n", dnsPacket.questions[0].qname.c_str());
         fflush(stdout);
