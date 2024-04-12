@@ -8,7 +8,7 @@
 
 #include <csignal>
 #include <thread>
-#include <string.h>
+#include <cstring>
 
 static TCP *tcp;
 static UDP *udp;
