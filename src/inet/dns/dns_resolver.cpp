@@ -30,9 +30,11 @@ int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
     curl_easy_cleanup(curl);
 
     if (res == CURLE_OK && !response.empty()) {
+        //TODO: error handling
+
         *ip = response;
-        return 1;
-    } else {
         return 0;
+    } else {
+        return -1;
     }
 }

@@ -66,16 +66,12 @@ int main() {
         client->send((void *) s, strlen(s));
         shutdown(client->fd, SHUT_RDWR);
     });
+
     udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
-        DNSPacket dnsPacket = DNSPacket((uint8_t *) buff, len);
-        HttpDNSResolver dnsResolver = HttpDNSResolver();
-
-        std::string ip;
-        dnsResolver.resolve(dnsPacket.questions[0].qname, &ip);
-
-        uint8_t r[4096];
-        size_t l = DNSPacket::generateResponse(r, dnsPacket, ip);
-        printf("%zu\n", client->send(r, l));
+        DNS::Packet packet = DNS::Packet((const uint8_t *) buff, len);
+        uint8_t b[4096]; //TODO: Maximum allowed packet size in DNS over UDP is 512 bytes, Larger packet should use TCP communication. (RFC 1035 - section 2.3.4)
+        ssize_t l = DNS::createResponse(b, packet._pkt);
+        client->send(b, l);
     });
 
     // Listen on separate thread

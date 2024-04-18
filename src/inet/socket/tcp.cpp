@@ -78,7 +78,9 @@ void TCP::handleData(TCPClient *client) {
     ssize_t bytesRead = recv(client->fd, buffer, sizeof(buffer), 0);
     if (bytesRead <= 0) {
         // Error or client closed connection
-        connectionClosedCallback(client);
+        if (connectionClosedCallback) {
+            connectionClosedCallback(client);
+        }
         epoll_ctl(epollFd, EPOLL_CTL_DEL, client->fd, nullptr);
         close(client->fd);
         connections.erase(std::remove(connections.begin(), connections.end(), client), connections.end());
