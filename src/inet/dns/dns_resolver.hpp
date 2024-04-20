@@ -2,15 +2,20 @@
 #define DNS_REVERSE_PROXY_DNS_RESOLVER_H
 
 #include <string>
+#include <vector>
 
 class DNSResolver {
 public:
-    virtual int resolve(std::string qname, std::string *ip) = 0;
+    virtual std::string resolve(std::string qname) = 0;
+
+    virtual std::vector<std::string> resolve(std::vector<std::string> qname) = 0;
 };
 
 class HttpDNSResolver : public DNSResolver {
 public:
-    virtual int resolve(std::string qname, std::string *ip);
+    std::string resolve(std::string qname) override;
+
+    std::vector<std::string> resolve(std::vector<std::string> qname) override;
 };
 
 

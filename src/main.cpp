@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "utility.hpp"
+
 #include "inet/socket/tcp.hpp"
 #include "inet/socket/udp.hpp"
 #include "inet/dns/dns.hpp"
@@ -52,27 +54,25 @@ int main() {
 
     Config::setHttpResolverUrl("http://127.0.0.1:8000/api/resolve?qname=");
 
-    tcp->setOnDataCallback([](TCPClient *client, void *buff, size_t len) {
-        const char *s = "HTTP/1.1 200 OK\n"
-                        "Content-Length: 53\n"
-                        "Content-Type: text/html\n"
-                        "Connection: Closed\n\n"
-                        "<html>\n"
-                        "<body>\n"
-                        "<h1>Hello, World!</h1>\n"
-                        "</body>\n"
-                        "</html>\n";
+    auto handler = [](SocketClient *client, void *buff, size_t len) {
+        uint8_t b[4096];
+        try {
+            auto *packet = new DNS::Packet((const uint8_t *) buff, len);
+            auto l = DNS::createResponse(b, packet);
+            client->send(b, l);
+            delete packet;
+        } catch (std::runtime_error &e) {
+            if (instanceof<TCPClient>(client)) {
+                ((TCPClient *) client)->close();
+            }
 
-        client->send((void *) s, strlen(s));
-        shutdown(client->fd, SHUT_RDWR);
-    });
+            printf("E: %s\n", e.what());
+            fflush(stdout);
+        }
+    };
 
-    udp->setOnDataCallback([](UDPClient *client, void *buff, ssize_t len) {
-        DNS::Packet packet = DNS::Packet((const uint8_t *) buff, len);
-        uint8_t b[4096]; //TODO: Maximum allowed packet size in DNS over UDP is 512 bytes, Larger packet should use TCP communication. (RFC 1035 - section 2.3.4)
-        ssize_t l = DNS::createResponse(b, packet._pkt);
-        client->send(b, l);
-    });
+    tcp->setOnDataCallback(handler);
+    udp->setOnDataCallback(handler);
 
     // Listen on separate thread
     tcpTread = std::thread(&TCP::listen, tcp, _SOCK_DEFAULT_BACKLOG);

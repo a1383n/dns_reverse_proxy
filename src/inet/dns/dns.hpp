@@ -16,10 +16,12 @@ public:
     public:
         Packet(const uint8_t *data, size_t len);
 
+        virtual ~Packet();
+
         ldns_pkt *_pkt;
     };
 
-    static ssize_t createResponse(uint8_t *buffer, ldns_pkt *dnsPacket);
+    static size_t createResponse(uint8_t *buffer, Packet *dnsPacket);
 
     static std::vector<std::string> resolveQuestions(ldns_pkt *dnsPacket);
 };

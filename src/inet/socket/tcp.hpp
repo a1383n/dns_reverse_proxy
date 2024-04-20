@@ -8,6 +8,8 @@ public:
     TCPClient(const sockaddr_in &addr, socklen_t addrLen, int fd);
 
     ssize_t send(void *buff, ssize_t len) override;
+
+    int close();
 };
 
 using NewConnectionCallback = std::function<void(TCPClient *)>;

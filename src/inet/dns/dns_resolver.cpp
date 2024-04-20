@@ -2,6 +2,7 @@
 #include "../../config/config.h"
 #include <curl/curl.h>
 #include <string>
+#include <stdexcept>
 
 size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
     size_t totalSize = size * nmemb;
@@ -9,15 +10,13 @@ size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *res
     return totalSize;
 }
 
-int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
+std::string HttpDNSResolver::resolve(std::string qname) {
     CURL *curl = curl_easy_init();
     if (!curl) {
-        return 0;
+        throw std::runtime_error("Fail to init curl");
     }
 
-    // Construct the URL with qname parameter
-    std::string url = Config::getHttpResolverUrl();
-    url += qname;
+    std::string url = Config::getHttpResolverUrl() + qname;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
@@ -30,11 +29,12 @@ int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
     curl_easy_cleanup(curl);
 
     if (res == CURLE_OK && !response.empty()) {
-        //TODO: error handling
-
-        *ip = response;
-        return 0;
+        return response;
     } else {
-        return -1;
+        throw std::runtime_error("Invalid response");
     }
+}
+
+std::vector<std::string> HttpDNSResolver::resolve(std::vector<std::string> qname) {
+    return std::vector<std::string>();
 }

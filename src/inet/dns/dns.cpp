@@ -1,12 +1,15 @@
-#include <cstring>
 #include "dns.hpp"
 
 DNS::Packet::Packet(const uint8_t *data, size_t len) {
     ldns_enum_status s = ldns_wire2pkt(&_pkt, data, len);
 
     if (s != LDNS_STATUS_OK) {
-        throw std::runtime_error("Invalid status");
+        throw std::runtime_error("wire2pkt failed");
     }
+}
+
+DNS::Packet::~Packet() {
+    ldns_pkt_free(_pkt);
 }
 
 std::vector<std::string> DNS::resolveQuestions(ldns_pkt *dnsPacket) {
@@ -23,34 +26,29 @@ std::vector<std::string> DNS::resolveQuestions(ldns_pkt *dnsPacket) {
                 char *qname = ldns_rr_owner(questionRR) ? ldns_rdf2str(ldns_rr_owner(questionRR)) : nullptr;
                 if (qname) {
                     std::string qnameStr(qname);
-                    std::string ip;
-                    int resolveStatus = resolver.resolve(qnameStr, &ip);
-                    if (resolveStatus == 0) {
-                        resolvedIPs.push_back(ip);
-                    }
-                    LDNS_FREE(qname); // Free allocated memory for qname
+                    std::string ip = resolver.resolve(qnameStr);
+                    resolvedIPs.push_back(ip);
+                    free(qname); // Free allocated memory for qname
                 }
             }
         }
     }
+//    ldns_rr_list_deep_free(questions);
 
     return resolvedIPs;
 }
 
-ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
+size_t DNS::createResponse(uint8_t *buffer, Packet *dnsPacket) {
     ldns_pkt *responsePacket = ldns_pkt_new();
     if (!responsePacket) {
         return -1;
     }
 
-    printf("%x", ldns_pkt_id(dnsPacket));
-    fflush(stdout);
+    ldns_pkt_set_id(responsePacket, ldns_pkt_id(dnsPacket->_pkt));
+    ldns_pkt_set_qr(responsePacket, true);
+    ldns_pkt_set_aa(responsePacket, true);
 
-    ldns_pkt_set_id(responsePacket, ldns_pkt_id(dnsPacket));
-    ldns_pkt_set_qr(responsePacket, 1);
-    ldns_pkt_set_aa(responsePacket, 1);
-
-    ldns_rr_list *questions = ldns_pkt_question(dnsPacket);
+    ldns_rr_list *questions = ldns_pkt_question(dnsPacket->_pkt);
     if (questions) {
         size_t questionCount = ldns_rr_list_rr_count(questions);
         for (size_t i = 0; i < questionCount; ++i) {
@@ -62,7 +60,7 @@ ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
         }
     }
 
-    auto resolvedIPs = DNS::resolveQuestions(dnsPacket);
+    auto resolvedIPs = DNS::resolveQuestions(dnsPacket->_pkt);
     for (const std::string &ip: resolvedIPs) {
         ldns_rr *answerRR = ldns_rr_new();
         if (questions && ldns_rr_list_rr_count(questions) > 0) {
@@ -74,24 +72,20 @@ ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
             ldns_rdf_deep_free(origin);
         }
         ldns_rr_set_class(answerRR, LDNS_RR_CLASS_IN);
-        ldns_rr_set_ttl(answerRR, 120);
+        ldns_rr_set_ttl(answerRR, 120); //TODO: Dynamic TTL
         ldns_rr_set_type(answerRR, LDNS_RR_TYPE_A);
         ldns_rr_push_rdf(answerRR, ldns_rdf_new_frm_str(LDNS_RDF_TYPE_A, ip.c_str()));
         ldns_pkt_push_rr(responsePacket, LDNS_SECTION_ANSWER, answerRR);
     }
 
-    uint8_t *responseWire;
     size_t responseWireLen;
 
-    //TODO: Free pointers (Carefully do this)
-    //TODO: error handling
-    ldns_status responseStatus = ldns_pkt2wire(&responseWire, responsePacket, &responseWireLen);
+    ldns_rr_list_free(questions);
+    ldns_status responseStatus = ldns_pkt2wire(&buffer, responsePacket, &responseWireLen);
 
     if (responseStatus != LDNS_STATUS_OK) {
-        return -1;
+        throw std::runtime_error("pkt2wire failed");
     }
-
-    std::memcpy(buffer, responseWire, responseWireLen);
 
     return responseWireLen;
 }

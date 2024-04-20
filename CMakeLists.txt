@@ -3,19 +3,24 @@ project(dns_reverse_proxy)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "src/config/*.cpp" "src/inet/socket/*.cpp" "src/inet/dns/*.cpp")
+# Find source files
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR} "src/*.cpp" "src/config/*.cpp" "src/inet/socket/*.cpp" "src/inet/dns/*.cpp")
 
+# Add executable
 add_executable(dns_reverse_proxy ${SOURCES})
 
-# LDNS Library
-# libldns-dev
-find_library(LDNS_LIBRARY NAMES ldns HINTS /usr/lib /usr/local/lib)
-find_path(LDNS_INCLUDE_DIR ldns/ldns.h HINTS /usr/include /usr/local/include)
-if (NOT LDNS_LIBRARY OR NOT LDNS_INCLUDE_DIR)
-    message(FATAL_ERROR "ldns library or headers not found. install libldns-dev")
-endif ()
-
+# Find Packages
+find_package(PkgConfig REQUIRED)
 find_package(CURL REQUIRED)
+pkg_check_modules(LDNS REQUIRED ldns)
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 
+# Include directories
+target_include_directories(dns_reverse_proxy PRIVATE ${LDNS_INCLUDE_DIR})
+target_include_directories(dns_reverse_proxy PRIVATE ${CURL_INCLUDE_DIR})
+target_include_directories(dns_reverse_proxy PRIVATE ${JSONCPP_INCLUDE_DIRS})
+
+# Link libraries
 target_link_libraries(dns_reverse_proxy PRIVATE ${LDNS_LIBRARY})
 target_link_libraries(dns_reverse_proxy PRIVATE CURL::libcurl)
+target_link_libraries(dns_reverse_proxy PRIVATE ${JSONCPP_LIBRARIES})
