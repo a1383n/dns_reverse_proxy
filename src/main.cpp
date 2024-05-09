@@ -9,7 +9,12 @@
 
 #include <csignal>
 #include <thread>
-#include <cstring>
+#include <gflags/gflags.h>
+
+
+DEFINE_string(endpoint, "", "DNS Resolver Endpoint URL");
+DEFINE_int32(port, 53, "Listen port");
+DEFINE_bool(debug, (bool) false, "Debug flag");
 
 static TCP *tcp;
 static UDP *udp;
@@ -27,6 +32,8 @@ void initializeTcpSocket(int port) {
     tcp = new TCP(INADDR_ANY, port);
     tcp->bind();
 
+    printf("TCP server start listing on ::%d\n", FLAGS_port);
+
     tcp->setNewConnectionCallback([](TCPClient *client) {
         printf("New client connected: %s:%d\n", inet_ntoa(client->addr.sin_addr), ntohs(client->addr.sin_port));
         fflush(stdout);
@@ -41,17 +48,38 @@ void initializeTcpSocket(int port) {
 void initializeUdpSocket(int port) {
     udp = new UDP(INADDR_ANY, port);
     udp->bind();
+
+    printf("UDP server start listing on ::%d\n", FLAGS_port);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    gflags::SetVersionString("1.0.0");
+
+    std::string endpoint_url;
+
+    if (!FLAGS_endpoint.empty()) {
+        endpoint_url = FLAGS_endpoint;
+    } else {
+        char *env_endpoint = std::getenv("ENDPOINT_URL");
+        if (env_endpoint != nullptr) {
+            endpoint_url = env_endpoint;
+        } else {
+            std::cerr << "Endpoint URL not provided via command line or environment variable" << std::endl;
+            return 1;
+        }
+    }
+
     signal(SIGABRT, terminate);
     signal(SIGTERM, terminate);
     signal(SIGINT, terminate);
 
-    initializeTcpSocket(3000);
-    initializeUdpSocket(3000);
 
-    Config::setHttpResolverUrl("http://127.0.0.1:8000/api/resolve?qname=");
+    initializeTcpSocket(FLAGS_port);
+    initializeUdpSocket(FLAGS_port);
+
+    Config::setHttpResolverUrl(endpoint_url);
+    Config::setDebugMode(FLAGS_debug);
 
     auto handler = [](SocketClient *client, void *buff, size_t len) {
         uint8_t b[4096];

@@ -17,21 +17,23 @@ int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
 
     // Construct the URL with qname parameter
     std::string url = Config::getHttpResolverUrl();
-    url += qname;
+    url += "?qname=" + qname;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 
     std::string response;
 
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
     CURLcode res = curl_easy_perform(curl);
+    long httpStatusCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpStatusCode);
+
     curl_easy_cleanup(curl);
 
-    if (res == CURLE_OK && !response.empty()) {
-        //TODO: error handling
-
+    if (res == CURLE_OK && httpStatusCode < 400 && !response.empty()) {
         *ip = response;
         return 0;
     } else {

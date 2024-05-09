@@ -6,8 +6,11 @@
 class Config {
 public:
     static std::string getHttpResolverUrl();
-
     static void setHttpResolverUrl(std::string string);
+
+    static bool isDebugMode();
+
+    static void setDebugMode(bool value);
 
 private:
 };

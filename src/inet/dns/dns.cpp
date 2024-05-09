@@ -43,9 +43,6 @@ ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
         return -1;
     }
 
-    printf("%x", ldns_pkt_id(dnsPacket));
-    fflush(stdout);
-
     ldns_pkt_set_id(responsePacket, ldns_pkt_id(dnsPacket));
     ldns_pkt_set_qr(responsePacket, 1);
     ldns_pkt_set_aa(responsePacket, 1);
