@@ -3,7 +3,7 @@ project(dns_reverse_proxy)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "src/config/*.cpp" "src/inet/socket/*.cpp" "src/inet/dns/*.cpp")
+file(GLOB SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "src/*.hpp" "src/config/*.cpp" "src/inet/socket/*.cpp" "src/inet/dns/*.cpp")
 
 add_executable(dns_reverse_proxy ${SOURCES})
 
