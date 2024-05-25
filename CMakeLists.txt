@@ -12,15 +12,15 @@ add_executable(dns_reverse_proxy ${SOURCES})
 # Find Packages
 find_package(PkgConfig REQUIRED)
 find_package(CURL REQUIRED) # libcurl4-openssl-dev
-pkg_check_modules(LDNS REQUIRED ldns) # libldns-dev
+
+find_library(LDNS_LIBRARY NAMES ldns HINTS /usr/lib /usr/local/lib)
+find_path(LDNS_INCLUDE_DIR ldns/ldns.h HINTS /usr/include /usr/local/include)
+if (NOT LDNS_LIBRARY OR NOT LDNS_INCLUDE_DIR)
+    message(FATAL_ERROR "ldns library or headers not found. install libldns-dev")
+endif ()
+
 pkg_check_modules(JSONCPP REQUIRED jsoncpp) # libjsoncpp-dev
 pkg_check_modules(gflags REQUIRED gflags) # libgflags-dev
-
-# Include directories
-target_include_directories(dns_reverse_proxy PRIVATE ${LDNS_INCLUDE_DIR})
-target_include_directories(dns_reverse_proxy PRIVATE ${CURL_INCLUDE_DIR})
-target_include_directories(dns_reverse_proxy PRIVATE ${JSONCPP_INCLUDE_DIRS})
-target_include_directories(dns_reverse_proxy PRIVATE ${GFLAGS_INCLUDE_DIRS})
 
 # Link libraries
 target_link_libraries(dns_reverse_proxy PRIVATE ${LDNS_LIBRARY})
