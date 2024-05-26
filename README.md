@@ -29,12 +29,7 @@ To build the DNS Reverse Proxy, follow these steps:
 
    On Debian-based systems, you can install these using:
    ```sh
-   sudo apt-get install libldns-dev libjsoncpp-dev libgflags-dev libcurl4-openssl-dev
-   ```
-
-   On Red Hat-based systems, you can install these using:
-   ```sh
-   sudo yum install ldns-devel jsoncpp-devel gflags-devel libcurl-devel
+   sudo apt-get install build-essentials cmake libldns-dev libjsoncpp-dev libgflags-dev libcurl4-openssl-dev
    ```
 
 2. **Clone the Repository**:
