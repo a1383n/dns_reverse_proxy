@@ -8,8 +8,8 @@ WORKDIR /opt/source
 
 COPY . .
 
-RUN cmake -S . -B ./build && cmake --build ./build --target dns_reverse_proxy -j $(nproc) && chmod +x ./build/dns_reverse_proxy
+RUN cmake -S . -B ./build && cmake --build ./build --target dns_reverse_proxy && chmod +x ./build/dns_reverse_proxy
 
 EXPOSE 53
 
-CMD ["./dns_reverse_proxy"]
+ENTRYPOINT ["./build/dns_reverse_proxy"]
