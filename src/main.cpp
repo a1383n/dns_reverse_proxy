@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
     auto handler = [](SocketClient *client, void *buff, size_t len) {
         uint8_t b[4096];
         try {
-            auto *packet = new DNS::Packet((const uint8_t *) buff, len);
-            auto l = DNS::createResponse(b, packet->_pkt);
+            auto *packet = new DNS::Packet(client, (const uint8_t *) buff, len);
+            auto l = DNS::createResponse(packet, b);
             client->send(b, l);
             delete packet;
         } catch (std::runtime_error &e) {

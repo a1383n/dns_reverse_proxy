@@ -5,12 +5,12 @@
 
 class DNSResolver {
 public:
-    virtual int resolve(std::string qname, std::string *ip) = 0;
+    virtual int resolve(std::string clientIp, std::string qname, std::string *ip) = 0;
 };
 
 class HttpDNSResolver : public DNSResolver {
 public:
-    virtual int resolve(std::string qname, std::string *ip);
+    int resolve(std::string clientIp, std::string qname, std::string *ip) override;
 };
 
 

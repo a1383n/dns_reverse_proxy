@@ -1,6 +1,7 @@
 #include "dns_resolver.hpp"
 #include "../../config/config.h"
 #include <curl/curl.h>
+#include <jsoncpp/json/json.h>
 #include <string>
 
 size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *response) {
@@ -9,23 +10,30 @@ size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *res
     return totalSize;
 }
 
-int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
+int HttpDNSResolver::resolve(std::string clientIp, std::string qname, std::string *ip) {
     CURL *curl = curl_easy_init();
     if (!curl) {
-        return 0;
+        return -1;
     }
 
-    // Construct the URL with qname parameter
     std::string url = Config::getHttpResolverUrl();
-    url += "?qname=" + qname;
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    Json::Value postData;
+    postData["q"] = qname;
+    postData["ip"] = clientIp;
+    Json::StreamWriterBuilder writer;
+    std::string postFields = Json::writeString(writer, postData);
 
     std::string response;
 
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_POST, 1);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.size());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_slist_append(nullptr, "Content-Type: application/json"));
 
     CURLcode res = curl_easy_perform(curl);
     long httpStatusCode = 0;
@@ -34,8 +42,25 @@ int HttpDNSResolver::resolve(std::string qname, std::string *ip) {
     curl_easy_cleanup(curl);
 
     if (res == CURLE_OK && httpStatusCode < 400 && !response.empty()) {
-        *ip = response;
-        return 0;
+        try {
+            Json::CharReaderBuilder readerBuilder;
+            Json::Value jsonResponse;
+            std::string errs;
+
+            std::istringstream responseStream(response);
+            if (Json::parseFromStream(readerBuilder, responseStream, &jsonResponse, &errs)) {
+                if (jsonResponse["ok"].asBool()) {
+                    *ip = jsonResponse["result"]["address"].asString();
+                    return 0;
+                } else {
+                    return -2;
+                }
+            } else {
+                return -1;
+            }
+        } catch (const std::exception &e) {
+            return -1;
+        }
     } else {
         return -1;
     }

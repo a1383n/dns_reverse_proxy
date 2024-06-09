@@ -1,7 +1,7 @@
 #include <cstring>
 #include "dns.hpp"
 
-DNS::Packet::Packet(const uint8_t *data, size_t len) {
+DNS::Packet::Packet(SocketClient *socketClient, const uint8_t *data, size_t len) : socketClient(socketClient) {
     ldns_enum_status s = ldns_wire2pkt(&_pkt, data, len);
 
     if (s != LDNS_STATUS_OK) {
@@ -9,7 +9,8 @@ DNS::Packet::Packet(const uint8_t *data, size_t len) {
     }
 }
 
-std::vector<std::string> DNS::resolveQuestions(ldns_pkt *dnsPacket) {
+std::vector<std::string> DNS::resolveQuestions(DNS::Packet *packet) {
+    ldns_pkt *dnsPacket = packet->_pkt;
     std::vector<std::string> resolvedIPs;
     HttpDNSResolver resolver = HttpDNSResolver();
 
@@ -24,7 +25,7 @@ std::vector<std::string> DNS::resolveQuestions(ldns_pkt *dnsPacket) {
                 if (qname) {
                     std::string qnameStr(qname);
                     std::string ip;
-                    int resolveStatus = resolver.resolve(qnameStr, &ip);
+                    int resolveStatus = resolver.resolve(inet_ntoa(packet->socketClient->addr.sin_addr), qnameStr, &ip);
                     if (resolveStatus == 0) {
                         resolvedIPs.push_back(ip);
                     }
@@ -37,7 +38,8 @@ std::vector<std::string> DNS::resolveQuestions(ldns_pkt *dnsPacket) {
     return resolvedIPs;
 }
 
-ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
+ssize_t DNS::createResponse(DNS::Packet *packet, uint8_t *buffer) {
+    ldns_pkt *dnsPacket = packet->_pkt;
     ldns_pkt *responsePacket = ldns_pkt_new();
     if (!responsePacket) {
         return -1;
@@ -59,7 +61,7 @@ ssize_t DNS::createResponse(uint8_t *buffer, ldns_pkt *dnsPacket) {
         }
     }
 
-    auto resolvedIPs = DNS::resolveQuestions(dnsPacket);
+    auto resolvedIPs = DNS::resolveQuestions(packet);
     for (const std::string &ip: resolvedIPs) {
         ldns_rr *answerRR = ldns_rr_new();
         if (questions && ldns_rr_list_rr_count(questions) > 0) {
