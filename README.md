@@ -1,8 +1,9 @@
 # DNS Reverse Proxy
 
-## Overview
-
 DNS Reverse Proxy is a C++ application designed to handle DNS queries by forwarding them to an external resolver and then returning the responses. This project is useful for scenarios where you need to relay DNS queries through a proxy, possibly for logging, filtering, or modifying the queries/responses.
+
+> [!NOTE]  
+> **DNS Reverse Proxy is part of a larger microservices architecture. For centralized management and administration, explore [SecureProxy](https://github.com/a1383n/secure-proxy), which provides an admin panel and central API for configuring and monitoring DNS and proxy servers.**
 
 ## Features
 
