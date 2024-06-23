@@ -1,16 +1,16 @@
 # DNS Reverse Proxy
 
-DNS Reverse Proxy is a C++ application designed to handle DNS queries by forwarding them to an external resolver and then returning the responses. This project is useful for scenarios where you need to relay DNS queries through a proxy, possibly for logging, filtering, or modifying the queries/responses.
+DNS Reverse Proxy is a C++ application designed to handle DNS queries by forwarding them to an external resolver and returning the responses. This project is useful for scenarios where you need to relay DNS queries through a proxy, possibly for logging, filtering, or modifying the questions/responses.
 
 > [!NOTE]  
-> **DNS Reverse Proxy is part of a larger microservices architecture. For centralized management and administration, explore [SecureProxy](https://github.com/a1383n/secure-proxy), which provides an admin panel and central API for configuring and monitoring DNS and proxy servers.**
+> **DNS Reverse Proxy is part of a larger microservices architecture. Explore [SecureProxy](https://github.com/a1383n/secure-proxy) for centralized management and administration, which provides an admin panel and central API for configuring and monitoring DNS and proxy servers.**
 
 ## Features
 
 - Forwards DNS queries to an external resolver
 - Returns DNS responses from the external resolver to the client
 - Configurable using command-line flags
-- JSON support for configuration and logging
+- JSON support for configuration and logging (Planed)
 - Built with CMake for easy compilation and dependency management
 
 ## Dependencies
@@ -55,14 +55,26 @@ To build the DNS Reverse Proxy, follow these steps:
 
 The DNS Reverse Proxy can be configured using command-line flags. Here are some of the available options:
 
-- `--endpoint`: Specify the external API to resolve IP address
-- `--port`: Specify the port that DNS server should listen on
+- `--endpoint`: Specify the external API to resolve the IP address
+- `--port`: Specify the port that the DNS server should listen on
 - `--debug`: Enable debug mode
 
 Example:
 ```sh
 ./dns-reverse-proxy --endpoint http://127.0.0.1:8000 --port 53
 ```
+### To-Do:
+- [ ] Improve error handling and optimize for serving high amounts of traffic
+- [ ] Implement DoH (DNS over HTTPS), DoT (DNS over TLS), DoQ (DNS over QUIC), and DNSCrypt for secure communication
+- [ ] Add memory caching for faster response times
+- [ ] Add JSON support for configuration and logging
+- [ ] Implement rate limiting to prevent abuse
+- [ ] Enhance logging and monitoring for better insights
+- [ ] Support IPv6
+- [ ] Implement load balancing for better distribution of traffic
+- [ ] Optimize DNS query performance
+- [ ] Implement a robust access control and authentication system
+- [ ] Improve documentation and provide comprehensive usage guides
 
 ## Contributing
 
